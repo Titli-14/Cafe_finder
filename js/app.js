@@ -117,4 +117,33 @@ function clearMarkers() {
   markers = [];
 }
 
+function addToList(place, index) {
+  const listItem = document.createElement("li");
+
+  // Photo or fallback image
+  const photoUrl = place.photos ? place.photos[0].getUrl({ maxWidth: 300, maxHeight: 200 }) 
+                                : "https://via.placeholder.com/300x200?text=Cafe";
+
+  listItem.className = "cafe-card";
+  listItem.innerHTML = `
+    <img src="${photoUrl}" alt="${place.name}">
+    <div class="cafe-info">
+      <h3>${index + 1}. ${place.name}</h3>
+      <p>⭐ ${place.rating || "N/A"} | ${place.user_ratings_total || 0} reviews</p>
+      <p>${place.vicinity || ""}</p>
+      <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+        place.vicinity
+      )}" target="_blank" class="directions-btn">📍 Get Directions</a>
+    </div>
+  `;
+
+  listItem.addEventListener("click", () => {
+    google.maps.event.trigger(markers[index], "click");
+    map.setCenter(place.geometry.location);
+  });
+
+  document.getElementById("placesList").appendChild(listItem);
+}
+
+
 window.onload = initMap;

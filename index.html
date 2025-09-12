@@ -8,11 +8,10 @@
   <link rel="stylesheet" href="css/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
-  <!-- Leaflet CSS & JS -->
+  <!-- Leaflet CSS & JS for OpenStreetMap -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- Your script -->
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -29,13 +28,16 @@
   <!-- MAP -->
   <div id="map" class="map"></div>
 
-  <!-- Results / Cards -->
-  <main class="results-section container">
+  <!-- Results Header moved directly under map -->
+  <div class="results-section container">
     <div class="results-header">
       <h1>Nearby Cafes</h1>
       <div id="countText" class="count">0 cafes found</div>
     </div>
+  </div>
 
+  <!-- Results / Cards -->
+  <main class="results-section container">
     <div id="loader" class="loader-wrap">
       <div class="spinner"></div>
       <div class="loader-text">Finding cafes near you...</div>
@@ -49,3 +51,4 @@
   </footer>
 </body>
 </html>
+

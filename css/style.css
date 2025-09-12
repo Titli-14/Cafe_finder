@@ -8,17 +8,17 @@
   --rounded: 14px;
   --container-width: 1200px;
   --poppins: "Poppins", sans-serif;
+  --brand-color: #cf6b53;
+  --text-dark: #163a3a;
 }
 
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:var(--poppins);
-  background:var(--bg);
-  color:#222;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
+body {
+  margin: 0;
+  font-family: var(--poppins);
+  background: linear-gradient(135deg, #fff6f0 0%, #ffe9dc 50%, #fffaf7 100%);
 }
+
 
 /* Topbar */
 .topbar{
@@ -29,6 +29,7 @@ body{
   top:0;
   z-index: 50;
 }
+
 .container{
   width: calc(100% - 40px);
   max-width: var(--container-width);
@@ -38,9 +39,10 @@ body{
   justify-content:space-between;
   gap:16px;
 }
+
 .brand{
   font-weight:600;
-  color:#cf6b53;
+  color: var(--brand-color);
   font-size:20px;
   letter-spacing:0.2px;
 }
@@ -79,17 +81,7 @@ body{
   width:100%;
   box-shadow: 0 10px 30px rgba(0,0,0,0.06);
   margin-bottom: 28px;
-  border-radius: var(--rounded); /* new: make Leaflet map rounded */
-  overflow: hidden; /* new: ensures tiles don’t spill outside */
-}
-/* Leaflet fixes */
-.leaflet-container {
-  font: inherit;       /* use same font */
   border-radius: var(--rounded);
-}
-.leaflet-control {
-  border-radius: 8px;  /* nicer UI for zoom buttons */
-  box-shadow: var(--shadow);
 }
 
 /* Results section */
@@ -107,7 +99,7 @@ body{
 .results-header h1{
   font-size:34px;
   margin:0;
-  color:#0f3b3b;
+  color:var(--text-dark);
   font-weight:600;
 }
 .count{
@@ -135,7 +127,7 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Cards grid (Pinterest-like) */
+/* Cards grid */
 .cards-grid{
   display:grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -162,7 +154,7 @@ body{
   width:100%;
   height:160px;
   object-fit:cover;
-  background:linear-gradient(180deg,#ffd6c0,#fff);
+  background:linear-gradient(180deg, var(--accent-2), var(--card-bg));
 }
 .card-body{
   padding:12px 14px 16px 14px;
@@ -172,7 +164,7 @@ body{
 }
 .card-title{
   font-weight:600;
-  color:#163a3a;
+  color:var(--text-dark);
   font-size:16px;
   line-height:1.1;
 }
@@ -191,8 +183,6 @@ body{
   color:#7a7a7a;
   font-size:13px;
 }
-
-/* small actions */
 .card-footer{
   display:flex;
   justify-content:space-between;
@@ -222,11 +212,35 @@ body{
   font-size:14px;
 }
 
-/* Responsive */
+/* Responsive for tablets */
 @media (max-width:900px){
   .container{width:calc(100% - 24px)}
   .map{height:300px}
   .search-wrap{width:100%}
   #locationInput{font-size:13px}
   .results-header h1{font-size:24px}
+}
+
+/* Responsive for mobile */
+@media (max-width:600px){
+  .container{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .brand{
+    font-size:18px;
+    text-align: center;
+  }
+  .search-wrap{
+    width:100%;
+    flex-direction: column;
+    gap:8px;
+  }
+  #locationInput{font-size:13px; width:100%}
+  #searchBtn{width:100%; padding:10px}
+  .map{height:250px; border-radius:12px}
+  .cards-grid{grid-template-columns: 1fr; gap:12px;}
+  .card-media{height:180px;}
+  .footer{font-size:13px; padding:16px 10px;}
 }

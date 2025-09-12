@@ -1,61 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cafe Finder ☕</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CafeFinder — Nearby Cafes</title>
+
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYbN4PwbYFu76cp_4ybsoVEG333ZNEj08&libraries=places"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Your script -->
+  <script src="js/app.js" defer></script>
 </head>
 <body>
-  <!-- Navbar -->
-  <header class="navbar">
-    <div class="logo">☕ Cafe Finder</div>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#">Explore</a>
-      <a href="#">About</a>
-    </nav>
+  <header class="topbar">
+    <div class="container">
+      <div class="brand">☕ CafeFinder</div>
+      <div class="search-wrap">
+        <input id="locationInput" type="text" placeholder="🔎 Enter location or address" />
+        <button id="searchBtn">Search</button>
+      </div>
+    </div>
   </header>
 
-  <!-- Search & Filters -->
-  <section class="search-section">
-    <input id="searchBox" type="text" placeholder="🔎 Search for a location..." />
-    <div class="filters">
-      <label><input type="checkbox" id="openNow"> Open Now</label>
-      <select id="minRating">
-        <option value="0">All Ratings</option>
-        <option value="3">3★+</option>
-        <option value="4">4★+</option>
-      </select>
-      <select id="radius">
-        <option value="1000">1 km</option>
-        <option value="3000">3 km</option>
-        <option value="5000">5 km</option>
-      </select>
+  <!-- MAP -->
+  <div id="map" class="map"></div>
+
+  <!-- Results / Cards -->
+  <main class="results-section container">
+    <div class="results-header">
+      <h1>Nearby Cafes</h1>
+      <div id="countText" class="count">0 cafes found</div>
     </div>
-  </section>
 
-  <!-- Main Content -->
-  <main class="container">
-    <!-- Sidebar -->
-    <aside id="sidebar">
-      <h2>☕ Nearby Cafes</h2>
-      <ul id="placesList"></ul>
-    </aside>
+    <div id="loader" class="loader-wrap">
+      <div class="spinner"></div>
+      <div class="loader-text">Finding cafes near you...</div>
+    </div>
 
-    <!-- Map -->
-    <div id="map"></div>
+    <div id="cardsGrid" class="cards-grid"></div>
   </main>
 
-  <!-- Footer -->
-  <footer>
-    <p>Made with ❤️ by Titli Dutta</p>
-    <p><a href="https://github.com/Titli-14" target="_blank">GitHub</a> | <a href="#">LinkedIn</a></p>
+  <footer class="footer">
+    <div class="container">© 2025 CafeFinder. Made with <span class="heart">❤</span> for coffee lovers.</div>
   </footer>
-
-  <script src="js/app.js"></script>
 </body>
 </html>

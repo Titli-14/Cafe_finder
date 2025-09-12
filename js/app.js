@@ -1,149 +1,199 @@
-let map, service, infowindow, markers = [];
-let currentLocation;
+// script.js - CafeFinder main (Leaflet + OSM)
+let map;
+let markers = [];
+let currentLocation = null;
+const DEFAULT_LOCATION = [22.5726, 88.3639]; // Kolkata (lat, lng)
 
-function initMap() {
-  map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 15,
-    center: { lat: 28.6139, lng: 77.2090 }, // fallback: Delhi
-  });
+// Initialize map
+document.addEventListener("DOMContentLoaded", () => {
+  map = L.map("map").setView(DEFAULT_LOCATION, 14);
 
-  infowindow = new google.maps.InfoWindow();
+  // OSM tiles
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+  }).addTo(map);
 
-  // Autocomplete search
-  const searchBox = new google.maps.places.Autocomplete(
-    document.getElementById("searchBox")
-  );
-
-  searchBox.addListener("place_changed", () => {
-    const place = searchBox.getPlace();
-    if (!place.geometry) return;
-    map.setCenter(place.geometry.location);
-    currentLocation = place.geometry.location;
-    fetchNearbyCafes();
-  });
-
-  // Try to get user location
+  // Try geolocation
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        currentLocation = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
-        map.setCenter(currentLocation);
-        fetchNearbyCafes();
+        currentLocation = [pos.coords.latitude, pos.coords.longitude];
+        map.setView(currentLocation, 15);
+        fetchAndRender(currentLocation);
       },
-      () => fetchNearbyCafes()
+      () => {
+        currentLocation = DEFAULT_LOCATION;
+        fetchAndRender(currentLocation);
+      }
     );
   } else {
-    fetchNearbyCafes();
+    currentLocation = DEFAULT_LOCATION;
+    fetchAndRender(currentLocation);
   }
 
-  // Filters
-  document.getElementById("openNow").addEventListener("change", fetchNearbyCafes);
-  document.getElementById("minRating").addEventListener("change", fetchNearbyCafes);
-  document.getElementById("radius").addEventListener("change", fetchNearbyCafes);
+  // Wire search
+  document.getElementById("searchBtn").addEventListener("click", onSearch);
+  document.getElementById("locationInput").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") onSearch();
+  });
+});
+
+// Search by location input (Nominatim)
+async function onSearch() {
+  const q = document.getElementById("locationInput").value.trim();
+  if (!q) {
+    fetchAndRender(currentLocation || DEFAULT_LOCATION);
+    return;
+  }
+
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`
+  );
+  const data = await res.json();
+
+  if (data && data.length > 0) {
+    const loc = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    currentLocation = loc;
+    map.setView(loc, 14);
+    fetchAndRender(loc);
+  } else {
+    alert("Couldn't find that location. Try another search term.");
+  }
 }
 
-function fetchNearbyCafes() {
+// Fetch cafes via Overpass API
+// Fetch cafes via Overpass API (expanded)
+async function fetchAndRender(location) {
+  showLoader(true);
   clearMarkers();
-  document.getElementById("placesList").innerHTML = "";
+  updateCount(0);
 
-  const request = {
-    location: currentLocation,
-    radius: document.getElementById("radius").value,
-    type: ["cafe"],
-    openNow: document.getElementById("openNow").checked,
-  };
-
-  service = new google.maps.places.PlacesService(map);
-  service.nearbySearch(request, (results, status) => {
-    if (status !== google.maps.places.PlacesServiceStatus.OK) return;
-
-    const minRating = parseFloat(document.getElementById("minRating").value);
-    results = results.filter((place) => (place.rating || 0) >= minRating);
-
-    results.forEach((place, i) => {
-      addMarker(place, i);
-      addToList(place, i);
-    });
-  });
-}
-
-function addMarker(place, index) {
-  const marker = new google.maps.Marker({
-    map,
-    position: place.geometry.location,
-    label: `${index + 1}`,
-  });
-
-  google.maps.event.addListener(marker, "click", () => {
-    const photoUrl = place.photos ? place.photos[0].getUrl({ maxWidth: 200 }) : "";
-    const content = `
-      <div>
-        <h3>${place.name}</h3>
-        <p>Rating: ${place.rating || "N/A"} ⭐</p>
-        <p>${place.vicinity || ""}</p>
-        ${photoUrl ? `<img src="${photoUrl}" style="width:100px;height:80px;">` : ""}
-        <br>
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-          place.vicinity
-        )}" target="_blank">📍 Directions</a>
-      </div>
-    `;
-    infowindow.setContent(content);
-    infowindow.open(map, marker);
-  });
-
-  markers.push(marker);
-}
-
-function addToList(place, index) {
-  const listItem = document.createElement("li");
-  listItem.innerHTML = `
-    <strong>${index + 1}. ${place.name}</strong><br>
-    ⭐ ${place.rating || "N/A"}<br>
-    ${place.vicinity || ""}
+  const [lat, lon] = location;
+  
+  // Expanded Overpass query
+  const query = `
+    [out:json];
+    (
+      node["amenity"="cafe"](around:3000,${lat},${lon});
+      node["shop"="coffee"](around:3000,${lat},${lon});
+      node["amenity"="fast_food"](around:3000,${lat},${lon});
+      node["amenity"="restaurant"](around:3000,${lat},${lon});
+    );
+    out;
   `;
-  listItem.addEventListener("click", () => {
-    google.maps.event.trigger(markers[index], "click");
-    map.setCenter(place.geometry.location);
-  });
-  document.getElementById("placesList").appendChild(listItem);
+
+  try {
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query,
+    });
+    const data = await res.json();
+
+    if (data.elements && data.elements.length > 0) {
+      data.elements.forEach((place, i) => {
+        createMarkerAndCard(place, i);
+      });
+      updateCount(data.elements.length);
+    } else {
+      document.getElementById("cardsGrid").innerHTML =
+        `<div class="no-results" style="padding:36px;color:#666">No cafes found nearby.</div>`;
+      updateCount(0);
+    }
+  } catch (err) {
+    console.error("Overpass fetch error:", err);
+    document.getElementById("cardsGrid").innerHTML =
+      `<div class="no-results" style="padding:36px;color:#666">Failed to fetch cafes.</div>`;
+  }
+
+  showLoader(false);
 }
 
-function clearMarkers() {
-  markers.forEach((m) => m.setMap(null));
-  markers = [];
+
+// Create marker + card
+function createMarkerAndCard(place, index) {
+  const pos = [place.lat, place.lon];
+  const name = place.tags.name || "Unnamed Cafe";
+  const address = place.tags["addr:street"] || "Address unavailable";
+
+  // Marker
+  const marker = L.marker(pos)
+    .addTo(map)
+    .bindPopup(`<b>${name}</b><br>${address}`);
+  markers.push(marker);
+
+  // Card
+  addCard(place, index, marker);
 }
 
-function addToList(place, index) {
-  const listItem = document.createElement("li");
+// Build card UI
+function addCard(place, index, marker) {
+  const grid = document.getElementById("cardsGrid");
+  const name = place.tags.name || "Unnamed Cafe";
+  const address = place.tags["addr:street"] || "Address unavailable";
 
-  // Photo or fallback image
-  const photoUrl = place.photos ? place.photos[0].getUrl({ maxWidth: 300, maxHeight: 200 }) 
-                                : "https://via.placeholder.com/300x200?text=Cafe";
+  const card = document.createElement("div");
+  card.className = "card";
+  card.dataset.index = index;
 
-  listItem.className = "cafe-card";
-  listItem.innerHTML = `
-    <img src="${photoUrl}" alt="${place.name}">
-    <div class="cafe-info">
-      <h3>${index + 1}. ${place.name}</h3>
-      <p>⭐ ${place.rating || "N/A"} | ${place.user_ratings_total || 0} reviews</p>
-      <p>${place.vicinity || ""}</p>
-      <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-        place.vicinity
-      )}" target="_blank" class="directions-btn">📍 Get Directions</a>
+  card.innerHTML = `
+    <img class="card-media" src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=800&auto=format&fit=crop" alt="${escapeHtml(name)}">
+    <div class="card-body">
+      <div class="card-title">${index + 1}. ${escapeHtml(name)}</div>
+      <div class="card-meta">
+        <div class="address">${escapeHtml(address)}</div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <a class="direction-btn" target="_blank" rel="noopener" href="https://www.openstreetmap.org/directions?from=&to=${place.lat},${place.lon}">Directions</a>
     </div>
   `;
 
-  listItem.addEventListener("click", () => {
-    google.maps.event.trigger(markers[index], "click");
-    map.setCenter(place.geometry.location);
+  // Click card → open marker popup
+  card.addEventListener("click", () => {
+    document.querySelectorAll(".card").forEach((c) => c.classList.remove("active"));
+    card.classList.add("active");
+    marker.openPopup();
+    map.setView([place.lat, place.lon], 16);
   });
 
-  document.getElementById("placesList").appendChild(listItem);
+  grid.appendChild(card);
 }
 
+// Helpers
+function clearMarkers() {
+  markers.forEach((m) => map.removeLayer(m));
+  markers = [];
+  document.getElementById("cardsGrid").innerHTML = "";
+}
 
-window.onload = initMap;
+function updateCount(n) {
+  document.getElementById("countText").textContent = `${n} cafes found`;
+}
+
+function showLoader(show) {
+  const loader = document.getElementById("loader");
+  const cards = document.getElementById("cardsGrid");
+  if (show) {
+    loader.style.display = "flex";
+    cards.style.display = "none";
+  } else {
+    loader.style.display = "none";
+    cards.style.display = "grid";
+  }
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return text.toString().replace(/[&<>"'`=\/]/g, function (s) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+      "`": "&#96;",
+      "=": "&#61;",
+      "/": "&#47;",
+    }[s];
+  });
+}

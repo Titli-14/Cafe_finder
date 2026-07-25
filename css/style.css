@@ -54,16 +54,11 @@ html {
 
 body {
   margin: 0;
-<<<<<<< HEAD
-  font-family: var(--poppins);
-  background: linear-gradient(135deg, #ffe8d6 0%, #fffaf0 40%, #fff 100%);
-=======
   font-family: var(--font-body);
   color: var(--espresso);
   background: var(--parchment);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
->>>>>>> c302936 (Enhance BrewSpot UI and improve responsiveness)
 }
 
 h1, h2, h3 {
@@ -682,6 +677,16 @@ button, input, select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.address.is-loading {
+  font-style: italic;
+  opacity: 0.7;
+  animation: addressPulse 1.4s ease-in-out infinite;
+}
+@keyframes addressPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
 }
 
 .card-meta-row {

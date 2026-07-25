@@ -112,7 +112,7 @@ async function fetchAndRender(location) {
   `;
 
   try {
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
+    const res = await fetch("https://lz4.overpass-api.de/api/interpreter", {
       method: "POST",
       body: query,
     });
